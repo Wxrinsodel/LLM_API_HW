@@ -1,104 +1,111 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from sympy import symbols, Poly, sympify
-import ast
 import re
+
 
 def plot_graph(func_name, x_min, x_max, func_params=None):
     x = np.linspace(x_min, x_max, 400)
-    if func_name == "y = x":
+
+    if func_name == "x":
         y = x
-    elif func_name == "y = x^2":
+    elif func_name == "x^2":
         y = x**2
-    elif func_name == "y = sin(x)":
-        y = np.sin(x)
-    elif func_name == "y = cos(x)":
-        y = np.cos(x)
-    elif func_name == "polynomial" and func_params:
+    elif func_name.startswith("sin"):
+        k = 1
+        if "(" in func_name:
+            k = float(func_name.split("(")[1].split("x")[0])
+        y = np.sin(k * x)
+    elif func_name.startswith("cos"):
+        k = 1
+        if "(" in func_name:
+            k = float(func_name.split("(")[1].split("x")[0])
+        y = np.cos(k * x)
+    elif "polynomial" in func_name and func_params:
+        # Polynomial evaluation
         y = np.polyval(func_params, x)
     else:
         print("Unknown function")
         return
 
-    plt.plot(x, y)
+    # Plot the graph
+    plt.figure(figsize=(10, 6))
+    plt.plot(x, y, label=f"{func_name}")
     plt.xlabel("x")
     plt.ylabel("y")
-    plt.title(f"Plot of {func_name}")
+    plt.title(f"Graph of {func_name}")
+    plt.axhline(0, color="black", linewidth=0.5)
+    plt.axvline(0, color="black", linewidth=0.5)
     plt.grid(True)
+    plt.legend()
     plt.show()
 
+
 def parse_polynomial(poly_str):
-    # Clean input
-    poly_str = poly_str.replace(" ", "").replace("–", "-").replace("^", "**")
-    
-    # Extract terms
-    terms = re.findall(r'([+-]?[^+-]+)', poly_str)
-    
-    # Initialize coefficients for up to 4th-degree polynomial
-    coeffs = [0, 0, 0, 0, 0]
-    
+    # Clean up the polynomial string
+    poly_str = poly_str.replace("y =", "").replace("–", "-").replace("^", "**").replace(" ", "")
+
+    # Regex to find terms
+    terms = re.findall(r"([+-]?[^+-]+)", poly_str)
+
+    # Determine the highest degree of the polynomial
+    max_degree = 0
     for term in terms:
-        # Constant term
-        if 'x' not in term:
-            coeffs[0] = float(term)
-        
-        # x term
-        elif term == 'x':
-            coeffs[4] = 1
-        elif term == '-x':
-            coeffs[4] = -1
-        
-        # x^2 term
-        elif 'x**2' in term or 'x^2' in term:
-            coeff = term.split('x')[0]
-            coeffs[3] = float(coeff) if coeff and coeff not in ['+', '-'] else (1 if '+x**2' in term else -1)
-        
-        # x^3 term
-        elif 'x**3' in term or 'x^3' in term:
-            coeff = term.split('x')[0]
-            coeffs[2] = float(coeff) if coeff and coeff not in ['+', '-'] else (1 if '+x**3' in term else -1)
-        
-        # x term with coefficient
+        if "x" in term:
+            if "**" in term:
+                degree = int(term.split("**")[1])
+            elif "x" in term:
+                degree = 1
+            else:
+                degree = 0
+            max_degree = max(max_degree, degree)
+
+    # Initialize coefficients
+    coeffs = [0] * (max_degree + 1)
+
+    for term in terms:
+        if "x" in term:
+            if "**" in term:
+                degree = int(term.split("**")[1])
+                coeff = term.split("x")[0]
+            elif "x" in term:
+                degree = 1
+                coeff = term.split("x")[0]
+            else:
+                degree = 0
+                coeff = term
+            coeffs[max_degree - degree] = float(coeff if coeff not in ["", "+", "-"] else coeff + "1")
         else:
-            coeff = term.split('x')[0]
-            coeffs[4] = float(coeff)
-    
-    # Remove leading zeros
-    while len(coeffs) > 1 and coeffs[0] == 0:
-        coeffs.pop(0)
-    
+            coeffs[-1] = float(term)
+
     return coeffs
 
 
 def main():
     while True:
-        user_input = input("What graph do you want to plot? (Type 'exit' to quit): ").strip().lower()
-        if "exit" in user_input:
-            print("Thank you – that’s it for today, bye!")
-            break
-        
-        if "sin" in user_input:
-            llm_response = "y = sin(x),-5,5" 
-        elif "cos" in user_input:
-            llm_response = "y = cos(x),-5,5" 
-        elif user_input.strip() == "x^2" or user_input.strip() == "y = x^2":
-            llm_response = "y = x^2,-5,5"
-        elif user_input.strip() == "x" or user_input.strip() == "y = x":
-            llm_response = "y = x,-5,5"
-        else:
-            coefficients = parse_polynomial(user_input)
-            llm_response = f"polynomial,-5,5,{coefficients}" 
-        
-        parts = llm_response.split(",")
-        func_name = parts[0].strip()
-        x_min = float(parts[1])
-        x_max = float(parts[2])
-        
-        func_params = None
-        if func_name == "polynomial" and len(parts) > 3:
-            func_params = [float(c) for c in parts[3].strip('[]').split(',')]
+        user_input = input("Enter the equation to plot (or 'exit' to quit): ").strip().lower()
 
-        plot_graph(func_name, x_min, x_max, func_params)
+        if user_input == "exit":
+            print("Goodbye!")
+            break
+
+        try:
+            if user_input.startswith("sin("):
+                k = float(user_input.split("(")[1].split("x")[0])
+                plot_graph(f"sin({k}x)", -5, 5)
+            elif user_input.startswith("cos("):
+                k = float(user_input.split("(")[1].split("x")[0])
+                plot_graph(f"cos({k}x)", -5, 5)
+            elif user_input in ["x", "y = x"]:
+                plot_graph("x", -5, 5)
+            elif user_input in ["x^2", "y = x^2"]:
+                plot_graph("x^2", -5, 5)
+            else:
+                # Polynomial case
+                coefficients = parse_polynomial(user_input)
+                plot_graph("polynomial", -10, 10, coefficients)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
     main()
