@@ -8,7 +8,7 @@ import numpy as np
 import re
 
 
-API_KEY = "aXqx762k7F9mOheHK8IBsXuyI6gD6Aqi" 
+API_KEY = os.environ["MISTRAL_API_KEY"]
 MODEL_NAME = "mistral-large-latest"
 
 client = Mistral(api_key=API_KEY)
