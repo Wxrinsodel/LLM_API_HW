@@ -7,10 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import re
 
-# Load environment variables (if using)
-# load_dotenv()
 
-# Replace with your actual Mistral API key
 API_KEY = "aXqx762k7F9mOheHK8IBsXuyI6gD6Aqi" 
 MODEL_NAME = "mistral-large-latest"
 
