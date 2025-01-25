@@ -3,22 +3,18 @@ import numpy as np
 import re
 
 
-def plot_graph(func_name, x_min, x_max, func_params=None):
+def plot_graph(func_name, x_min, x_max, func_params=None, k=None):
     x = np.linspace(x_min, x_max, 400)
 
     if func_name == "x":
         y = x
     elif func_name == "x^2":
         y = x**2
-    elif func_name.startswith("sin"):
-        k = 1
-        if "(" in func_name:
-            k = float(func_name.split("(")[1].split("x")[0])
+    elif func_name == "sin":
+        k = k if k is not None else 1
         y = np.sin(k * x)
-    elif func_name.startswith("cos"):
-        k = 1
-        if "(" in func_name:
-            k = float(func_name.split("(")[1].split("x")[0])
+    elif func_name == "cos":
+        k = k if k is not None else 1
         y = np.cos(k * x)
     elif "polynomial" in func_name and func_params:
         # Polynomial evaluation
@@ -89,12 +85,12 @@ def main():
             break
 
         try:
-            if user_input.startswith("sin("):
-                k = float(user_input.split("(")[1].split("x")[0])
-                plot_graph(f"sin({k}x)", -5, 5)
-            elif user_input.startswith("cos("):
-                k = float(user_input.split("(")[1].split("x")[0])
-                plot_graph(f"cos({k}x)", -5, 5)
+            # Handle `sin(kx)` or `cos(kx)`
+            trig_match = re.match(r"(sin|cos)\(([\d\.]*)x\)", user_input)
+            if trig_match:
+                func_name = trig_match.group(1)
+                k = float(trig_match.group(2)) if trig_match.group(2) else 1
+                plot_graph(func_name, -5, 5, k=k)
             elif user_input in ["x", "y = x"]:
                 plot_graph("x", -5, 5)
             elif user_input in ["x^2", "y = x^2"]:
